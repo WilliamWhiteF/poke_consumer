@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+    php:
+        build: .
+        command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
+        volumes:
+            - .:/app
+        ports:
+            - "8080:8080"
+        depends_on:
+            - database
+            - queue
+        networks:
+            - app
+        env_file: .env
+        environment:
+            - service=app
+    worker:
+        build: .
+        command: ["php", "artisan", "queue:work"]
+        volumes:
+            - .:/app
+        ports:
+            - "8000:8000"
+        depends_on:
+            - database
+            - queue
+            - php
+        networks:
+            - app
+        env_file: .env
+        environment:
+            - service=worker
+    database:
+        image: mariadb:10.10-rc
+        restart: unless-stopped
+        ports:
+            - "3306:3306"
+        networks:
+            - app
+        volumes:
+            - mariadbdata:/var/lib/mysql
+        environment:
+            - MARIADB_DATABASE=pokemon
+            - MARIADB_ROOT_PASSWORD=lTkNLD8Vo89
+    queue:
+        image: rabbitmq:3-management
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        networks:
+            - app
+
+networks:
+  app:
+volumes:
+  mariadbdata:
